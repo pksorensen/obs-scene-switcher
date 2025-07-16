@@ -42,8 +42,18 @@ class ConfigManager {
                 rememberPosition: true,
                 rememberSize: true,
                 transparency: 0.95,
-                minWidth: 300,
-                minHeight: 400
+                minWidth: 100,
+                minHeight: 50,
+                dock: {
+                    enabled: false,
+                    position: 'bottom-right',
+                    autoHide: false,
+                    hideDelay: 3000,
+                    showOnHover: true,
+                    padding: 20,
+                    snapToEdges: true,
+                    rememberDockState: true
+                }
             },
             
             // Theme and Appearance
@@ -78,6 +88,11 @@ class ConfigManager {
                 minimizeWindow: 'Ctrl+M',
                 closeWindow: 'Ctrl+W',
                 openSettings: 'Ctrl+,',
+                toggleDock: 'Ctrl+D',
+                dockToBottomRight: 'Ctrl+Shift+1',
+                dockToBottomLeft: 'Ctrl+Shift+2',
+                dockToTopRight: 'Ctrl+Shift+3',
+                dockToTopLeft: 'Ctrl+Shift+4',
                 scene1: 'F1',
                 scene2: 'F2',
                 scene3: 'F3',

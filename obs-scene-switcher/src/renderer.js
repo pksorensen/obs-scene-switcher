@@ -24,6 +24,9 @@ class OBSSceneSwitcher {
             passwordInput: document.getElementById('password-input'),
             connectBtn: document.getElementById('connect-btn'),
             refreshScenesBtn: document.getElementById('refresh-scenes-btn'),
+            muteBtn: document.getElementById('mute-btn'),
+            micMuteBtn: document.getElementById('mic-mute-btn'),
+            compactModeBtn: document.getElementById('compact-mode-btn'),
             alwaysOnTopToggle: document.getElementById('always-on-top-toggle'),
             minimizeBtn: document.getElementById('minimize-btn'),
             maximizeBtn: document.getElementById('maximize-btn'),
@@ -44,6 +47,8 @@ class OBSSceneSwitcher {
         this.viewMode = 'grid';
         this.settingsExpanded = false;
         this.compactMode = false;
+        this.isMuted = false;
+        this.isMicMuted = false;
     }
 
     bindEvents() {
@@ -67,6 +72,20 @@ class OBSSceneSwitcher {
 
         this.elements.refreshScenesBtn.addEventListener('click', () => {
             this.refreshScenes();
+        });
+
+        this.elements.muteBtn.addEventListener('click', () => {
+            this.toggleMute();
+        });
+
+        this.elements.micMuteBtn.addEventListener('click', () => {
+            this.toggleMicMute();
+        });
+
+        // Compact mode button in title bar
+        this.elements.compactModeBtn.addEventListener('click', () => {
+            this.toggleCompactMode(!this.compactMode);
+            this.saveSetting('compactMode', this.compactMode);
         });
 
         // View controls
@@ -113,6 +132,8 @@ class OBSSceneSwitcher {
                 // Auto-refresh scenes when connection is established
                 if (connected) {
                     setTimeout(() => this.refreshScenes(), 500);
+                    setTimeout(() => this.checkMuteStatus(), 800);
+                    setTimeout(() => this.checkMicMuteStatus(), 1000);
                 }
             });
 
@@ -124,6 +145,9 @@ class OBSSceneSwitcher {
                 this.updateScenesList(scenes);
             });
         }
+
+        // Context menu for compact mode
+        this.setupCompactModeContextMenu();
     }
 
     async loadSettings() {
@@ -202,6 +226,12 @@ class OBSSceneSwitcher {
                 
                 // Load scenes
                 await this.refreshScenes();
+                
+                // Check mute status
+                await this.checkMuteStatus();
+                
+                // Check mic mute status
+                await this.checkMicMuteStatus();
             } else {
                 throw new Error('Connection failed');
             }
@@ -225,6 +255,10 @@ class OBSSceneSwitcher {
             this.elements.scenesContainer.style.display = 'none';
             this.scenes = [];
             this.currentScene = null;
+            this.isMuted = false;
+            this.isMicMuted = false;
+            this.updateMuteButtonState();
+            this.updateMicMuteButtonState();
         } catch (error) {
             console.error('Disconnect error:', error);
         }
@@ -316,6 +350,96 @@ class OBSSceneSwitcher {
         this.renderScenes();
     }
 
+    async toggleMute() {
+        if (!this.isConnected) {
+            this.showNotification('Not connected to OBS', 'error');
+            return;
+        }
+
+        try {
+            this.elements.muteBtn.disabled = true;
+            const result = await window.electronAPI.obs.toggleMute();
+            this.isMuted = result.muted;
+            this.updateMuteButtonState();
+            
+            const statusText = this.isMuted ? 'muted' : 'unmuted';
+            this.showNotification(`Audio ${statusText}`, 'info');
+        } catch (error) {
+            console.error('Error toggling mute:', error);
+            this.showNotification('Failed to toggle mute', 'error');
+        } finally {
+            this.elements.muteBtn.disabled = false;
+        }
+    }
+
+    async checkMuteStatus() {
+        if (!this.isConnected) return;
+
+        try {
+            const result = await window.electronAPI.obs.getMuteStatus();
+            this.isMuted = result.muted;
+            this.updateMuteButtonState();
+        } catch (error) {
+            console.error('Error checking mute status:', error);
+            // Don't show error notification for this as it's a background check
+        }
+    }
+
+    updateMuteButtonState() {
+        if (this.isMuted) {
+            this.elements.muteBtn.classList.add('muted');
+            this.elements.muteBtn.title = 'Unmute Audio';
+        } else {
+            this.elements.muteBtn.classList.remove('muted');
+            this.elements.muteBtn.title = 'Mute Audio';
+        }
+    }
+
+    async toggleMicMute() {
+        if (!this.isConnected) {
+            this.showNotification('Not connected to OBS', 'error');
+            return;
+        }
+
+        try {
+            this.elements.micMuteBtn.disabled = true;
+            const result = await window.electronAPI.obs.toggleMicMute();
+            this.isMicMuted = result.muted;
+            this.updateMicMuteButtonState();
+            
+            const statusText = this.isMicMuted ? 'muted' : 'unmuted';
+            this.showNotification(`Microphone ${statusText}`, 'info');
+        } catch (error) {
+            console.error('Error toggling mic mute:', error);
+            this.showNotification('Failed to toggle microphone mute', 'error');
+        } finally {
+            this.elements.micMuteBtn.disabled = false;
+        }
+    }
+
+    async checkMicMuteStatus() {
+        if (!this.isConnected) return;
+
+        try {
+            const result = await window.electronAPI.obs.getMicMuteStatus();
+            this.isMicMuted = result.muted;
+            this.updateMicMuteButtonState();
+        } catch (error) {
+            console.error('Error checking mic mute status:', error);
+            // Don't show error notification for this as it's a background check
+        }
+    }
+
+    updateMicMuteButtonState() {
+        if (this.isMicMuted) {
+            this.elements.micMuteBtn.classList.add('muted');
+            this.elements.micMuteBtn.title = 'Unmute Microphone';
+        } else {
+            this.elements.micMuteBtn.classList.remove('muted');
+            this.elements.micMuteBtn.title = 'Mute Microphone';
+        }
+    }
+
     setViewMode(mode) {
         this.viewMode = mode;
         this.elements.scenesList.className = `scenes-list ${mode}-view`;
@@ -340,6 +464,146 @@ class OBSSceneSwitcher {
     toggleCompactMode(enabled) {
         this.compactMode = enabled;
         document.querySelector('.app-container').classList.toggle('compact', enabled);
+        
+        // Update compact mode button state
+        this.elements.compactModeBtn.classList.toggle('active', enabled);
+        
+        // Update window minimum size via IPC
+        window.electronAPI.updateCompactMode(enabled);
+        
+        // In compact mode, automatically handle UI state
+        if (enabled) {
+            // If connected, show only scenes
+            if (this.isConnected) {
+                this.elements.connectionPanel.style.display = 'none';
+                this.elements.scenesContainer.style.display = 'block';
+            } else {
+                // If not connected, show a minimal connection UI or auto-try to connect
+                this.tryAutoConnect();
+            }
+        } else {
+            // In normal mode, show appropriate panels based on connection state
+            if (this.isConnected) {
+                this.elements.connectionPanel.style.display = 'none';
+                this.elements.scenesContainer.style.display = 'block';
+            } else {
+                this.elements.connectionPanel.style.display = 'block';
+                this.elements.scenesContainer.style.display = 'none';
+            }
+        }
+    }
+    
+    async tryAutoConnect() {
+        // Try to auto-connect using saved settings when in compact mode
+        const settings = await window.electronAPI.settings.getAll();
+        if (settings.host && settings.port) {
+            setTimeout(() => {
+                this.connect();
+            }, 500);
+        }
+    }
+    
+    setupCompactModeContextMenu() {
+        // Right-click context menu for compact mode
+        document.addEventListener('contextmenu', (e) => {
+            if (this.compactMode) {
+                e.preventDefault();
+                this.showCompactContextMenu(e.clientX, e.clientY);
+            }
+        });
+    }
+    
+    showCompactContextMenu(x, y) {
+        // Remove existing context menu
+        const existingMenu = document.getElementById('compact-context-menu');
+        if (existingMenu) {
+            existingMenu.remove();
+        }
+        
+        // Create context menu
+        const menu = document.createElement('div');
+        menu.id = 'compact-context-menu';
+        menu.style.cssText = `
+            position: fixed;
+            top: ${y}px;
+            left: ${x}px;
+            background: rgba(40, 40, 40, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 4px 0;
+            font-size: 11px;
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        `;
+        
+        // Menu items
+        const menuItems = [];
+        
+        if (this.isConnected) {
+            menuItems.push({
+                text: 'Disconnect from OBS',
+                action: () => this.disconnect()
+            });
+            menuItems.push({
+                text: 'Refresh Scenes',
+                action: () => this.refreshScenes()
+            });
+        } else {
+            menuItems.push({
+                text: 'Connect to OBS',
+                action: () => this.connect()
+            });
+        }
+        
+        menuItems.push({
+            text: 'Exit Compact Mode',
+            action: () => {
+                this.elements.compactModeToggle.checked = false;
+                this.toggleCompactMode(false);
+                this.saveSetting('compactMode', false);
+            }
+        });
+        
+        // Add menu items to menu
+        menuItems.forEach((item, index) => {
+            const menuItem = document.createElement('div');
+            menuItem.style.cssText = `
+                padding: 6px 12px;
+                cursor: pointer;
+                color: #ffffff;
+                transition: background-color 0.2s ease;
+            `;
+            menuItem.textContent = item.text;
+            
+            menuItem.addEventListener('click', () => {
+                item.action();
+                menu.remove();
+            });
+            
+            menuItem.addEventListener('mouseenter', () => {
+                menuItem.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            });
+            
+            menuItem.addEventListener('mouseleave', () => {
+                menuItem.style.backgroundColor = 'transparent';
+            });
+            
+            menu.appendChild(menuItem);
+        });
+        
+        document.body.appendChild(menu);
+        
+        // Remove menu when clicking outside
+        setTimeout(() => {
+            const removeMenu = (e) => {
+                if (!menu.contains(e.target)) {
+                    menu.remove();
+                    document.removeEventListener('click', removeMenu);
+                }
+            };
+            document.addEventListener('click', removeMenu);
+        }, 100);
     }
     
     showLoading(show) {

@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   maximizeWindow: () => ipcRenderer.invoke('window:maximize'),
   closeWindow: () => ipcRenderer.invoke('window:close'),
   setAlwaysOnTop: (value) => ipcRenderer.invoke('window:setAlwaysOnTop', value),
+  updateCompactMode: (enabled) => ipcRenderer.invoke('window:updateCompactMode', enabled),
   
   // OBS WebSocket communication (to be implemented)
   obs: {
@@ -17,6 +18,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getCurrentScene: () => ipcRenderer.invoke('obs:getCurrentScene'),
     setCurrentScene: (sceneName) => ipcRenderer.invoke('obs:setCurrentScene', sceneName),
     getStatus: () => ipcRenderer.invoke('obs:getStatus'),
+    getMuteStatus: () => ipcRenderer.invoke('obs:getMuteStatus'),
+    toggleMute: () => ipcRenderer.invoke('obs:toggleMute'),
+    getMicMuteStatus: () => ipcRenderer.invoke('obs:getMicMuteStatus'),
+    toggleMicMute: () => ipcRenderer.invoke('obs:toggleMicMute'),
     
     // Event listeners
     onSceneChanged: (callback) => {
