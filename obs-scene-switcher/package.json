@@ -1,0 +1,43 @@
+{
+  "name": "obs-scene-switcher",
+  "version": "1.0.0",
+  "description": "OBS Scene Switcher - Always-on-top controller for OBS Studio",
+  "main": "main.js",
+  "scripts": {
+    "start": "npx electron .",
+    "dev": "npx electron . --dev",
+    "build": "npx electron-builder",
+    "dist": "npx electron-builder --publish=never"
+  },
+  "keywords": [
+    "obs",
+    "scene-switcher",
+    "streaming",
+    "electron"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "obs-websocket-js": "^5.0.5"
+  },
+  "build": {
+    "appId": "com.example.obs-scene-switcher",
+    "productName": "OBS Scene Switcher",
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "category": "public.app-category.utilities"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

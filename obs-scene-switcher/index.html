@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Scene Switcher</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <link rel="stylesheet" href="assets/styles/settings.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Custom title bar -->
+        <div class="title-bar">
+            <div class="title-bar-drag-region">
+                <div class="title-bar-title">OBS Scene Switcher</div>
+                <div class="title-bar-controls">
+                    <button class="title-bar-control" id="minimize-btn" title="Minimize">
+                        <svg width="10" height="10" viewBox="0 0 10 10">
+                            <path d="m 2,5 6,0" stroke="currentColor" stroke-width="1"></path>
+                        </svg>
+                    </button>
+                    <button class="title-bar-control" id="maximize-btn" title="Maximize">
+                        <svg width="10" height="10" viewBox="0 0 10 10">
+                            <path d="m 2,1 0,8 8,0 0,-8 z" stroke="currentColor" stroke-width="1" fill="none"></path>
+                        </svg>
+                    </button>
+                    <button class="title-bar-control close" id="close-btn" title="Close">
+                        <svg width="10" height="10" viewBox="0 0 10 10">
+                            <path d="m 2,2 6,6 m 6,-6 -6,6" stroke="currentColor" stroke-width="1"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Connection status -->
+        <div class="connection-status" id="connection-status">
+            <div class="status-indicator" id="status-indicator"></div>
+            <span id="status-text">Disconnected</span>
+        </div>
+
+        <!-- Connection settings -->
+        <div class="connection-panel" id="connection-panel">
+            <div class="form-group">
+                <label for="host-input">Host:</label>
+                <input type="text" id="host-input" value="localhost" placeholder="localhost">
+            </div>
+            <div class="form-group">
+                <label for="port-input">Port:</label>
+                <input type="number" id="port-input" value="4455" placeholder="4455">
+            </div>
+            <div class="form-group">
+                <label for="password-input">Password:</label>
+                <input type="password" id="password-input" placeholder="Optional">
+            </div>
+            <button id="connect-btn" class="primary-button">Connect</button>
+        </div>
+
+        <!-- Scenes list -->
+        <div class="scenes-container" id="scenes-container" style="display: none;">
+            <div class="scenes-header">
+                <h3>Scenes</h3>
+                <div class="scenes-controls">
+                    <button id="refresh-scenes-btn" class="secondary-button" title="Refresh scenes">
+                        <svg width="12" height="12" viewBox="0 0 12 12">
+                            <path d="M6 2 L6 0 L8 2 L6 4 L6 2 Z M10 6 A4 4 0 0 1 6 10 A4 4 0 0 1 2 6 A4 4 0 0 1 6 2" 
+                                  stroke="currentColor" stroke-width="1" fill="none"/>
+                        </svg>
+                    </button>
+                    <button id="grid-view-btn" class="secondary-button active" title="Grid view">
+                        <svg width="12" height="12" viewBox="0 0 12 12">
+                            <rect x="1" y="1" width="4" height="4" stroke="currentColor" stroke-width="1" fill="none"/>
+                            <rect x="7" y="1" width="4" height="4" stroke="currentColor" stroke-width="1" fill="none"/>
+                            <rect x="1" y="7" width="4" height="4" stroke="currentColor" stroke-width="1" fill="none"/>
+                            <rect x="7" y="7" width="4" height="4" stroke="currentColor" stroke-width="1" fill="none"/>
+                        </svg>
+                    </button>
+                    <button id="list-view-btn" class="secondary-button" title="List view">
+                        <svg width="12" height="12" viewBox="0 0 12 12">
+                            <rect x="1" y="2" width="10" height="1" fill="currentColor"/>
+                            <rect x="1" y="5" width="10" height="1" fill="currentColor"/>
+                            <rect x="1" y="8" width="10" height="1" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="scenes-list grid-view" id="scenes-list">
+                <!-- Scenes will be dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Settings panel -->
+        <div class="settings-panel">
+            <div class="settings-header">
+                <button id="settings-toggle-btn" class="settings-toggle-btn" title="Settings">
+                    <svg width="14" height="14" viewBox="0 0 14 14">
+                        <path d="M7 9.5 A2.5 2.5 0 1 1 7 4.5 A2.5 2.5 0 1 1 7 9.5 Z" stroke="currentColor" stroke-width="1" fill="none"/>
+                        <path d="M7 0 L7 2 M7 12 L7 14 M14 7 L12 7 M2 7 L0 7 M12 2 L10.5 3.5 M3.5 10.5 L2 12 M12 12 L10.5 10.5 M3.5 3.5 L2 2" 
+                              stroke="currentColor" stroke-width="1"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="settings-content" id="settings-content">
+                <div class="settings-group">
+                    <div class="settings-toggle">
+                        <label>
+                            <input type="checkbox" id="always-on-top-toggle" checked>
+                            Always on Top
+                        </label>
+                    </div>
+                    <div class="settings-toggle">
+                        <label>
+                            <input type="checkbox" id="auto-connect-toggle">
+                            Auto-connect on startup
+                        </label>
+                    </div>
+                    <div class="settings-toggle">
+                        <label>
+                            <input type="checkbox" id="minimize-to-tray-toggle">
+                            Minimize to tray
+                        </label>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label class="settings-label">Hotkeys</label>
+                    <div class="hotkey-setting">
+                        <span>Toggle Window</span>
+                        <input type="text" id="toggle-hotkey" class="hotkey-input" placeholder="Ctrl+Shift+O" readonly>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <button id="open-advanced-settings-btn" class="primary-button" style="width: 100%; margin-bottom: 12px;">
+                        Advanced Settings
+                    </button>
+                </div>
+                <div class="settings-group">
+                    <label class="settings-label">Appearance</label>
+                    <div class="settings-toggle">
+                        <label>
+                            <input type="checkbox" id="compact-mode-toggle">
+                            Compact mode
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading overlay -->
+        <div class="loading-overlay" id="loading-overlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Loading scenes...</div>
+        </div>
+        
+        <!-- Notification container -->
+        <div class="notification-container" id="notification-container"></div>
+    </div>
+
+    <script src="src/theme-manager.js"></script>
+    <script src="src/keyboard-shortcuts.js"></script>
+    <script src="src/settings-ui.js"></script>
+    <script src="src/renderer.js"></script>
+</body>
+</html>
